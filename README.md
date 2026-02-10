@@ -1,2 +1,2 @@
 # valentine-website
-My Valentine's site with CI/CD
+My HTML's site with CI/CD
