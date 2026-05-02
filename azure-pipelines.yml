@@ -1,47 +1,30 @@
-# ASP.NET
-# Build and test ASP.NET projects.
-# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+# Simple HTML website
+# Deploy static HTML files to Windows VM
 
 trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest'
-
-variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  vmImage: ubuntu-latest
 
 stages:
 - stage: Build
-  displayName: 'Build ASP.NET App'
+  displayName: 'Build Stage'
   jobs:
-  - job: BuildJob
+  - job: CopyFiles
     steps:
-    - task: NuGetToolInstaller@1
-
-    - task: NuGetCommand@2
+    - task: CopyFiles@2
       inputs:
-        restoreSolution: '$(solution)'
-
-    - task: VSBuild@1
-      inputs:
-        solution: '$(solution)'
-        msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-        platform: '$(buildPlatform)'
-        configuration: '$(buildConfiguration)'
-
-    - task: VSTest@2
-      inputs:
-        platform: '$(buildPlatform)'
-        configuration: '$(buildConfiguration)'
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      displayName: 'Copy HTML files'
 
     - task: PublishBuildArtifacts@1
       inputs:
-        PathtoPublish: '$(build.artifactStagingDirectory)'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
-      displayName: 'Publish build artifacts'
+      displayName: 'Publish artifacts'
 
 - stage: Deploy
   displayName: 'Deploy to Windows VM'
@@ -49,7 +32,7 @@ stages:
   condition: succeeded()
   jobs:
   - deployment: DeployToVM
-    displayName: 'Deploy ASP.NET App'
+    displayName: 'Deploy HTML Website'
     environment:
       name: 'my-angular-vm'
       resourceType: VirtualMachine
@@ -64,5 +47,5 @@ stages:
               sshEndpoint: 'my-angular-vm-ssh'
               sourceFolder: '$(Pipeline.Workspace)/drop'
               contents: '**'
-              targetFolder: 'C:/inetpub/wwwroot/aspnet-app'
+              targetFolder: 'C:/inetpub/wwwroot/html-site'
               overWrite: true
