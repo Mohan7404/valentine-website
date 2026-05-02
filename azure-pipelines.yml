@@ -32,3 +32,26 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+    - stage: Deploy
+  displayName: 'Deploy to Windows VM'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToVM
+    displayName: 'Deploy ASP.NET App'
+    environment:
+      name: 'my-angular-vm'
+      resourceType: VirtualMachine
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - task: CopyFilesOverSSH@0
+            inputs:
+              sshEndpoint: 'my-angular-vm-ssh'
+              sourceFolder: '$(Pipeline.Workspace)/drop'
+              contents: '**'
+              targetFolder: 'C:/inetpub/wwwroot/aspnet-app'
+              overWrite: true
